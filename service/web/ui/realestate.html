@@ -64,6 +64,23 @@ section{margin-top:44px}
 .sec-head .count{font-size:13px;color:var(--text2);font-weight:600}
 .sec-head .tools{margin-left:auto;display:flex;gap:8px}
 
+/* 필터 바 — 검색 + 구 칩 + 결과 수 */
+.filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.search{position:relative;flex:0 1 260px}
+.search input{width:100%;font:inherit;font-size:14px;padding:9px 14px 9px 34px;color:var(--text);
+  background:var(--surface);border:1px solid transparent;border-radius:var(--r-md);transition:all .15s}
+.search input::placeholder{color:var(--text2)}
+.search input:focus{outline:none;background:var(--bg);border-color:var(--brand)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text2)}
+.guwrap{display:flex;gap:6px;overflow-x:auto;flex:1;padding-bottom:2px;scrollbar-width:none}
+.guwrap::-webkit-scrollbar{display:none}
+.gu{flex:none;cursor:pointer;font-size:13px;font-weight:700;padding:7px 13px;border-radius:var(--r-pill);
+  border:1px solid var(--border);background:var(--bg);color:var(--text2);transition:all .14s;white-space:nowrap}
+.gu:hover{border-color:var(--border2);color:var(--text)}
+.gu.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.more{display:flex;justify-content:center;margin-top:22px}
+.more button{padding:12px 28px}
+
 /* ── 버튼 ── */
 .btn{cursor:pointer;font-weight:700;font-size:13.5px;padding:9px 16px;
   border-radius:var(--r-md);border:1px solid var(--border2);background:var(--bg);color:var(--text3);
@@ -162,7 +179,16 @@ section{margin-top:44px}
       <span class="count" id="candCount"></span>
       <div class="tools"><button class="btn" onclick="loadCands()">새로고침</button></div>
     </div>
+    <div class="filters">
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="단지·역 이름 검색" oninput="render()">
+      </div>
+      <div class="guwrap" id="guwrap"></div>
+    </div>
     <div class="grid" id="cands"></div>
+    <div class="more" id="more"></div>
   </section>
 
   <!-- 완성 영상 -->
@@ -213,6 +239,9 @@ async function syncData(btn){
   } finally { btn.disabled=false; btn.textContent="매물 새로 수집"; loadCands(); }
 }
 
+let PAGE=1, GU="all";
+const PER=12;
+
 async function loadCands(){
   $("#cands").innerHTML=Array.from({length:6},()=>`
     <div class="skel"><div style="width:30%;height:14px"></div>
@@ -220,14 +249,52 @@ async function loadCands(){
       <div style="width:52%;height:13px;margin-bottom:16px"></div>
       <div style="width:100%;height:54px;margin-bottom:16px"></div>
       <div style="width:100%;height:40px"></div></div>`).join("");
+  $("#more").innerHTML="";
   try{ CANDS=await (await fetch("/api/realestate/candidates?top=200")).json(); }
   catch(e){ $("#cands").innerHTML='<div class="empty"><b>후보를 불러오지 못했어요</b>서버 창(터미널)의 오류를 팀 채팅에 공유해주세요</div>'; return }
-  $("#candCount").textContent=`${CANDS.length}곳 · 역세권 점수순`;
-  $("#cands").innerHTML="";
-  for(const c of CANDS){
-    const dead=c.has_coords===false;
-    const d=document.createElement("div"); d.className="card"+(dead?" off":"");
-    d.innerHTML=`
+  renderGuChips(); PAGE=1; render();
+}
+
+/* 제작 가능한 매물만 대상 — 좌표 없는 건 애초에 만들 수 없으니 목록에서 제외 */
+const makeable=()=>CANDS.filter(c=>c.has_coords!==false);
+
+function renderGuChips(){
+  const counts={};
+  for(const c of makeable()) counts[c.gu||"기타"]=(counts[c.gu||"기타"]||0)+1;
+  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  $("#guwrap").innerHTML=[`<button class="gu on" data-gu="all" onclick="setGu('all',this)">전체</button>`]
+    .concat(top.map(([g,n])=>`<button class="gu" data-gu="${g}" onclick="setGu('${g}',this)">${g} ${n}</button>`)).join("");
+}
+function setGu(g,el){
+  GU=g; PAGE=1;
+  document.querySelectorAll(".gu").forEach(b=>b.classList.toggle("on",b===el));
+  render();
+}
+
+function filtered(){
+  const q=$("#q").value.trim().toLowerCase();
+  return makeable().filter(c=>{
+    if(GU!=="all" && (c.gu||"기타")!==GU) return false;
+    if(!q) return true;
+    return `${c.name} ${c.subway||""} ${c.address||""}`.toLowerCase().includes(q);
+  });
+}
+
+function render(){
+  const list=filtered(), shown=list.slice(0,PAGE*PER);
+  $("#candCount").textContent=list.length?`${list.length}곳 · 역세권 점수순`:"";
+  if(!list.length){
+    $("#cands").innerHTML='<div class="empty"><b>조건에 맞는 매물이 없어요</b>검색어를 지우거나 다른 구를 선택해보세요</div>';
+    $("#more").innerHTML=""; return;
+  }
+  $("#cands").innerHTML=shown.map(cardHTML).join("");
+  const rest=list.length-shown.length;
+  $("#more").innerHTML=rest>0
+    ? `<button class="btn" onclick="PAGE++;render()">${rest}곳 더 보기</button>` : "";
+}
+
+function cardHTML(c){
+  return `<div class="card">
       <div class="chiprow">
         <span class="chip brand">${c.gu||"—"}</span>
         ${c.rendered?'<span class="chip done">영상 있음</span>':""}
@@ -240,13 +307,10 @@ async function loadCands(){
         <div class="stat"><b>${c.total_units?c.total_units.toLocaleString():"—"}</b><span>세대</span></div>
       </div>
       <div class="cta">
-        ${dead
-          ? '<button class="btn primary w" disabled>제작 불가</button><div class="off-note">좌표가 없어 지도·로드뷰 캡처가 안 되는 매물이에요</div>'
-          : `<button class="btn primary w" onclick="make('${c.home_code}')">이 매물로 영상 만들기</button>
-             <div class="sub-act">${c.rendered?`<a href="/media/produce/re-${c.home_code}/episode.mp4" target="_blank">기존 영상 보기 ↗</a>`:""}</div>`}
-      </div>`;
-    $("#cands").appendChild(d);
-  }
+        <button class="btn primary w" onclick="make('${c.home_code}')">이 매물로 영상 만들기</button>
+        <div class="sub-act">${c.rendered?`<a href="/media/produce/re-${c.home_code}/episode.mp4" target="_blank">기존 영상 보기 ↗</a>`:""}</div>
+      </div>
+    </div>`;
 }
 
 async function make(code){
