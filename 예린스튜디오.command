@@ -30,7 +30,16 @@ command -v node >/dev/null || echo "⚠️  node 없음 → 터미널에서: bre
 grep -q "TYPECAST_API_KEY=." .env 2>/dev/null || \
   echo "⚠️  .env에 TYPECAST_API_KEY가 비어 있음 → 팀 공유 키를 넣어야 예린 목소리가 나옵니다"
 
-# 3) 서버 실행 + 브라우저 오픈
+# 3) 이미 실행 중이면 새로 띄우지 않고 브라우저만 연다 (중복 더블클릭 안전)
+if curl -s -o /dev/null --max-time 2 "http://127.0.0.1:8787/api/realestate/syncinfo"; then
+  echo "• 스튜디오가 이미 켜져 있어요 — 브라우저만 엽니다"
+  open "http://127.0.0.1:8787/realestate"
+  echo "  (완전히 새로 시작하고 싶으면: 기존 스튜디오 터미널 창을 닫고 다시 더블클릭)"
+  read -s -k '?이 창은 닫아도 됩니다 — 아무 키나 누르세요' || true
+  exit 0
+fi
+
+# 4) 서버 실행 + 브라우저 오픈
 echo "• 스튜디오 시작 → http://127.0.0.1:8787/realestate"
 ( sleep 2 && open "http://127.0.0.1:8787/realestate" ) &
 exec ./.venv/bin/python cli.py ui
