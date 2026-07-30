@@ -5,98 +5,115 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>예린이의 부동산 뽀개기 — 제작 스튜디오</title>
 <style>
-/* 전용 스튜디오 — Astryx 토큰 구조 + 채널 브랜드(앰버) 액센트 */
+/* ── SEED Design (당근 디자인 시스템) 토큰 기반 — seed-design.io 팔레트 적용 ── */
 :root{
-  --bg:#ffffff; --surface:#f7f7f6; --surface2:#efefee;
-  --text:#0f0f0f; --text2:#5c5c58; --border:#e4e4e1;
-  --brand:#e8a200; --brand-soft:#fff5dd; --ok:#0a7d33; --bad:#c62828;
-  --radius:14px; --radius-sm:9px;
+  /* palette */
+  --carrot-100:#fff2ec; --carrot-200:#ffe8db; --carrot-500:#ff9364;
+  --carrot-600:#ff6600; --carrot-700:#e14d00;
+  --g-00:#ffffff; --g-100:#f7f8f9; --g-200:#f3f4f5; --g-300:#eeeff1; --g-400:#dcdee3;
+  --g-600:#b0b3ba; --g-700:#868b94; --g-800:#555d6d; --g-900:#2a3038; --g-1000:#1a1c20;
+  --green-600:#10ab7d; --red-700:#fa342c;
+  /* semantic (light) */
+  --bg:var(--g-00); --surface:var(--g-100); --surface2:var(--g-200);
+  --text:var(--g-900); --text2:var(--g-700); --border:var(--g-300); --border2:var(--g-400);
+  --brand:var(--carrot-600); --brand-hover:var(--carrot-700);
+  --brand-soft:var(--carrot-100); --brand-soft2:var(--carrot-200);
+  --ok:var(--green-600); --bad:var(--red-700);
+  --radius:16px; --radius-sm:10px; --radius-pill:999px;
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#0b0b0c; --surface:#151517; --surface2:#1e1e21;
-    --text:#f2f2f0; --text2:#9c9c96; --border:#28282b;
-    --brand:#ffb300; --brand-soft:#2a2313; --ok:#4ade80; --bad:#f87171;
+    --bg:var(--g-1000); --surface:#212429; --surface2:var(--g-900);
+    --text:var(--g-100); --text2:var(--g-600); --border:#33373e; --border2:#3f444c;
+    --brand:var(--carrot-600); --brand-hover:var(--carrot-500);
+    --brand-soft:#33241a; --brand-soft2:#422c1d;
+    --ok:#42c593; --bad:#fe928d;
   }
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Noto Sans KR",sans-serif;
-  font-size:14.5px;line-height:1.55;letter-spacing:-.01em}
+  font-family:"Karrot Sans",-apple-system,BlinkMacSystemFont,"Pretendard","Noto Sans KR",sans-serif;
+  font-size:15px;line-height:1.6;letter-spacing:-.02em}
 a{color:inherit;text-decoration:none}
 
-header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;
-  padding:0 24px;height:58px;background:color-mix(in srgb,var(--bg) 88%,transparent);
-  backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15.5px;letter-spacing:-.02em}
-.logo .dot{width:11px;height:11px;border-radius:4px;background:var(--brand)}
-.home{margin-left:auto;font-size:12.5px;color:var(--text2)}
-.home:hover{color:var(--text)}
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:12px;
+  padding:0 24px;height:60px;background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16.5px;letter-spacing:-.03em}
+.logo .dot{width:12px;height:12px;border-radius:4px;background:var(--brand)}
+.home{margin-left:auto;font-size:13px;color:var(--text2);font-weight:600;
+  padding:7px 12px;border-radius:var(--radius-pill)}
+.home:hover{background:var(--surface);color:var(--text)}
 
-main{max-width:1180px;margin:0 auto;padding:30px 24px 90px}
+main{max-width:1180px;margin:0 auto;padding:28px 24px 96px}
 
-/* 스텝 레일 */
-.steps{display:flex;gap:8px;align-items:center;margin-bottom:26px;font-size:13px;font-weight:600;color:var(--text2)}
-.step{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:99px;border:1px solid var(--border);background:var(--surface)}
-.step b{display:inline-flex;width:20px;height:20px;border-radius:99px;background:var(--surface2);
+/* 스텝 레일 — Seed 칩 스타일 */
+.steps{display:flex;gap:6px;align-items:center;margin-bottom:28px;font-size:13.5px;font-weight:700;color:var(--text2)}
+.step{display:flex;align-items:center;gap:8px;padding:8px 15px;border-radius:var(--radius-pill);
+  border:1px solid var(--border);background:var(--bg);transition:all .18s}
+.step b{display:inline-flex;width:21px;height:21px;border-radius:var(--radius-pill);background:var(--surface2);
   align-items:center;justify-content:center;font-size:11.5px;color:var(--text2)}
-.step.on{border-color:color-mix(in srgb,var(--brand) 55%,var(--border));background:var(--brand-soft);color:var(--text)}
-.step.on b{background:var(--brand);color:#1c1500}
-.steps .arrow{color:var(--border)}
+.step.on{border-color:var(--brand);background:var(--brand-soft);color:var(--text)}
+.step.on b{background:var(--brand);color:#fff}
+.steps .arrow{color:var(--border2);margin:0 2px}
 
-h2{font-size:18px;letter-spacing:-.02em;margin:34px 0 4px}
-.sub{color:var(--text2);font-size:13px;margin-bottom:14px}
+h2{font-size:20px;font-weight:800;letter-spacing:-.03em;margin:36px 0 6px}
+.sub{color:var(--text2);font-size:13.5px;margin-bottom:16px}
 
+/* 카드 — Seed 리스트/카드 감성: 보더 최소, 서피스+호버 리프트 */
 .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;
-  display:flex;flex-direction:column;transition:border-color .18s,transform .18s,box-shadow .18s}
-.card:hover{border-color:color-mix(in srgb,var(--brand) 50%,var(--border));transform:translateY(-2px);
-  box-shadow:0 10px 26px -14px color-mix(in srgb,var(--text) 25%,transparent)}
-.card h3{font-size:15px;letter-spacing:-.01em;margin:10px 0 2px}
-.where{color:var(--text2);font-size:12.5px}
-.badge{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:3px 9px;
-  border-radius:99px;background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
-.badge.brand{color:color-mix(in srgb,var(--brand) 75%,var(--text));background:var(--brand-soft);
-  border-color:color-mix(in srgb,var(--brand) 35%,var(--border))}
-.badge.ok{color:var(--ok)}
-.stats{display:flex;gap:22px;margin:12px 0 6px;font-variant-numeric:tabular-nums}
-.stats b{display:block;font-size:22px;line-height:1.1;letter-spacing:-.02em}
-.stats span{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
-.card .actions{margin-top:auto;padding-top:12px;display:flex;gap:8px;align-items:center}
+.card{background:var(--surface);border:1px solid transparent;border-radius:var(--radius);padding:18px 20px;
+  display:flex;flex-direction:column;transition:border-color .15s,transform .15s,box-shadow .15s,background .15s}
+.card:hover{background:var(--bg);border-color:var(--border2);transform:translateY(-2px);
+  box-shadow:0 12px 28px -16px rgba(26,28,32,.28)}
+.card h3{font-size:16px;font-weight:700;letter-spacing:-.02em;margin:10px 0 3px}
+.where{color:var(--text2);font-size:13px}
+.badge{display:inline-flex;align-items:center;font-size:12px;font-weight:700;padding:4px 10px;
+  border-radius:6px;background:var(--surface2);color:var(--text2)}
+.badge.brand{color:var(--brand);background:var(--brand-soft)}
+.badge.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.stats{display:flex;gap:24px;margin:14px 0 6px;font-variant-numeric:tabular-nums}
+.stats b{display:block;font-size:23px;font-weight:800;line-height:1.15;letter-spacing:-.03em}
+.stats span{font-size:11.5px;color:var(--text2);font-weight:600}
+.card .actions{margin-top:auto;padding-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-.btn{appearance:none;cursor:pointer;font:inherit;font-weight:700;font-size:13px;padding:8px 16px;
-  border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);
-  transition:filter .12s,transform .1s}
-.btn:hover{filter:brightness(.96)} .btn:active{transform:scale(.98)}
+/* 버튼 — Seed: 브랜드 솔리드 + 캡슐에 가까운 라운드 */
+.btn{appearance:none;cursor:pointer;font:inherit;font-weight:700;font-size:14px;padding:10px 18px;
+  border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg);color:var(--text);
+  transition:background .12s,transform .1s,border-color .12s}
+.btn:hover{background:var(--surface)} .btn:active{transform:scale(.97)}
 .btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
-.btn.primary{background:var(--brand);border-color:var(--brand);color:#1c1500}
-.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
 
-.re-toggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;
-  padding:7px 13px;border:1px solid var(--border);border-radius:99px;background:var(--bg);user-select:none;
-  transition:background .15s,border-color .15s}
-.re-toggle:has(input:checked){background:var(--brand-soft);border-color:color-mix(in srgb,var(--brand) 50%,var(--border))}
+.re-toggle{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;cursor:pointer;
+  padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius-pill);background:var(--bg);user-select:none;
+  transition:all .15s}
+.re-toggle:has(input:checked){background:var(--brand-soft);border-color:var(--brand);color:var(--text)}
 .re-toggle input{accent-color:var(--brand);margin:0}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .spacer{flex:1}
-.hint{font-size:12.5px;color:var(--text2)}
+.hint{font-size:13px;color:var(--text2)}
 
 /* 제작 중 패널 */
-#making{display:none;border:1px solid color-mix(in srgb,var(--brand) 40%,var(--border));
-  background:var(--brand-soft);border-radius:var(--radius);padding:16px 18px;margin-top:14px}
+#making{display:none;border:1.5px solid var(--brand);
+  background:var(--brand-soft);border-radius:var(--radius);padding:18px 20px;margin-top:16px}
 #making.show{display:block}
-.pulse{display:inline-block;width:9px;height:9px;border-radius:99px;background:var(--brand);animation:p 1.2s infinite;margin-right:8px}
+.pulse{display:inline-block;width:9px;height:9px;border-radius:var(--radius-pill);background:var(--brand);
+  animation:p 1.2s infinite;margin-right:8px}
 @keyframes p{50%{opacity:.25}}
-.log{background:color-mix(in srgb,var(--bg) 75%,transparent);border:1px solid var(--border);border-radius:var(--radius-sm);
+.log{background:color-mix(in srgb,var(--bg) 80%,transparent);border:1px solid var(--border);border-radius:var(--radius-sm);
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;padding:12px 14px;
-  max-height:240px;overflow:auto;white-space:pre-wrap;color:var(--text2);margin-top:10px}
+  max-height:240px;overflow:auto;white-space:pre-wrap;color:var(--text2);margin-top:12px}
 
 video{width:100%;border-radius:var(--radius-sm);background:#000;aspect-ratio:16/9}
-.skel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;min-height:180px}
-.skel div{background:var(--surface2);border-radius:6px;animation:sk 1.3s ease-in-out infinite}
+.skel{background:var(--surface);border-radius:var(--radius);padding:18px 20px;min-height:184px}
+.skel div{background:var(--surface2);border-radius:8px;animation:sk 1.3s ease-in-out infinite}
 @keyframes sk{50%{opacity:.45}}
-.empty{color:var(--text2);padding:36px 0;text-align:center}
-details summary{cursor:pointer;font-size:12.5px;color:var(--text2)}
+.empty{color:var(--text2);padding:44px 0;text-align:center;background:var(--surface);
+  border-radius:var(--radius);grid-column:1/-1}
+details summary{cursor:pointer;font-size:13px;color:var(--text2);font-weight:600}
 </style>
 </head>
 <body>
