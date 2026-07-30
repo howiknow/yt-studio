@@ -5,29 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>예린이의 부동산 뽀개기 — 제작 스튜디오</title>
 <style>
-/* ── SEED Design (당근 디자인 시스템) 토큰 기반 — seed-design.io 팔레트 적용 ── */
+/* ── SEED Design(당근) 토큰 · 정돈된 위계: 헤더(도구) → 히어로(한 줄) → 매물 → 완성 ── */
 :root{
-  /* palette */
-  --carrot-100:#fff2ec; --carrot-200:#ffe8db; --carrot-500:#ff9364;
-  --carrot-600:#ff6600; --carrot-700:#e14d00;
+  --carrot-100:#fff2ec; --carrot-500:#ff9364; --carrot-600:#ff6600; --carrot-700:#e14d00;
   --g-00:#ffffff; --g-100:#f7f8f9; --g-200:#f3f4f5; --g-300:#eeeff1; --g-400:#dcdee3;
   --g-600:#b0b3ba; --g-700:#868b94; --g-800:#555d6d; --g-900:#2a3038; --g-1000:#1a1c20;
-  --green-600:#10ab7d; --red-700:#fa342c;
-  /* semantic (light) */
   --bg:var(--g-00); --surface:var(--g-100); --surface2:var(--g-200);
-  --text:var(--g-900); --text2:var(--g-700); --border:var(--g-300); --border2:var(--g-400);
-  --brand:var(--carrot-600); --brand-hover:var(--carrot-700);
-  --brand-soft:var(--carrot-100); --brand-soft2:var(--carrot-200);
-  --ok:var(--green-600); --bad:var(--red-700);
-  --radius:16px; --radius-sm:10px; --radius-pill:999px;
+  --text:var(--g-900); --text2:var(--g-700); --text3:var(--g-800);
+  --border:var(--g-300); --border2:var(--g-400);
+  --brand:var(--carrot-600); --brand-hover:var(--carrot-700); --brand-soft:var(--carrot-100);
+  --ok:#10ab7d; --ok-soft:#edfaf6; --bad:#fa342c;
+  --r-lg:20px; --r-md:12px; --r-pill:999px;
+  --shadow-card:0 14px 32px -18px rgba(26,28,32,.25);
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:var(--g-1000); --surface:#212429; --surface2:var(--g-900);
-    --text:var(--g-100); --text2:var(--g-600); --border:#33373e; --border2:#3f444c;
-    --brand:var(--carrot-600); --brand-hover:var(--carrot-500);
-    --brand-soft:#33241a; --brand-soft2:#422c1d;
-    --ok:#42c593; --bad:#fe928d;
+    --bg:#121417; --surface:#1c1f24; --surface2:#262a30;
+    --text:#f2f3f5; --text2:#8f949c; --text3:#c3c7cd;
+    --border:#2b2f36; --border2:#3a3f47;
+    --brand:#ff6f0f; --brand-hover:#ff9364; --brand-soft:#33241a;
+    --ok:#42c593; --ok-soft:#153029; --bad:#fe928d;
+    --shadow-card:0 14px 32px -18px rgba(0,0,0,.6);
   }
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -35,162 +33,217 @@ body{background:var(--bg);color:var(--text);
   font-family:"Karrot Sans",-apple-system,BlinkMacSystemFont,"Pretendard","Noto Sans KR",sans-serif;
   font-size:15px;line-height:1.6;letter-spacing:-.02em}
 a{color:inherit;text-decoration:none}
+button{font:inherit}
 
-header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:12px;
-  padding:0 24px;height:60px;background:color-mix(in srgb,var(--bg) 92%,transparent);
-  backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
-.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16.5px;letter-spacing:-.03em}
-.logo .dot{width:12px;height:12px;border-radius:4px;background:var(--brand)}
-.home{margin-left:auto;font-size:13px;color:var(--text2);font-weight:600;
-  padding:7px 12px;border-radius:var(--radius-pill)}
+/* ── 헤더: 브랜드(좌) · 도구(우) ── */
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;
+  padding:0 max(24px,calc((100vw - 1120px)/2));height:64px;
+  background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;letter-spacing:-.03em}
+.logo .dot{width:13px;height:13px;border-radius:4.5px;background:var(--brand)}
+.spacer{flex:1}
+.home{font-size:13px;color:var(--text2);font-weight:600;padding:8px 12px;border-radius:var(--r-pill)}
 .home:hover{background:var(--surface);color:var(--text)}
 
-main{max-width:1180px;margin:0 auto;padding:28px 24px 96px}
+main{max-width:1120px;margin:0 auto;padding:0 24px 110px}
 
-/* 스텝 레일 — Seed 칩 스타일 */
-.steps{display:flex;gap:6px;align-items:center;margin-bottom:28px;font-size:13.5px;font-weight:700;color:var(--text2)}
-.step{display:flex;align-items:center;gap:8px;padding:8px 15px;border-radius:var(--radius-pill);
-  border:1px solid var(--border);background:var(--bg);transition:all .18s}
-.step b{display:inline-flex;width:21px;height:21px;border-radius:var(--radius-pill);background:var(--surface2);
-  align-items:center;justify-content:center;font-size:11.5px;color:var(--text2)}
-.step.on{border-color:var(--brand);background:var(--brand-soft);color:var(--text)}
-.step.on b{background:var(--brand);color:#fff}
-.steps .arrow{color:var(--border2);margin:0 2px}
+/* ── 히어로: 한 문장 + 상태 메타 한 줄 ── */
+.hero{padding:44px 0 8px}
+.hero h1{font-size:27px;font-weight:800;letter-spacing:-.04em;line-height:1.3;text-wrap:balance}
+.hero h1 em{font-style:normal;color:var(--brand)}
+.meta{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13.5px;color:var(--text2);flex-wrap:wrap}
+.meta b{color:var(--text3);font-weight:700}
+.meta .sep{width:3px;height:3px;border-radius:99px;background:var(--border2)}
+.meta .flash{color:var(--ok);font-weight:700}
 
-h2{font-size:20px;font-weight:800;letter-spacing:-.03em;margin:36px 0 6px}
-.sub{color:var(--text2);font-size:13.5px;margin-bottom:16px}
+/* ── 섹션 공통 ── */
+section{margin-top:44px}
+.sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+.sec-head h2{font-size:19px;font-weight:800;letter-spacing:-.03em}
+.sec-head .count{font-size:13px;color:var(--text2);font-weight:600}
+.sec-head .tools{margin-left:auto;display:flex;gap:8px}
 
-/* 카드 — Seed 리스트/카드 감성: 보더 최소, 서피스+호버 리프트 */
-.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
-.card{background:var(--surface);border:1px solid transparent;border-radius:var(--radius);padding:18px 20px;
-  display:flex;flex-direction:column;transition:border-color .15s,transform .15s,box-shadow .15s,background .15s}
-.card:hover{background:var(--bg);border-color:var(--border2);transform:translateY(-2px);
-  box-shadow:0 12px 28px -16px rgba(26,28,32,.28)}
-.card h3{font-size:16px;font-weight:700;letter-spacing:-.02em;margin:10px 0 3px}
-.where{color:var(--text2);font-size:13px}
-.badge{display:inline-flex;align-items:center;font-size:12px;font-weight:700;padding:4px 10px;
-  border-radius:6px;background:var(--surface2);color:var(--text2)}
-.badge.brand{color:var(--brand);background:var(--brand-soft)}
-.badge.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
-.stats{display:flex;gap:24px;margin:14px 0 6px;font-variant-numeric:tabular-nums}
-.stats b{display:block;font-size:23px;font-weight:800;line-height:1.15;letter-spacing:-.03em}
-.stats span{font-size:11.5px;color:var(--text2);font-weight:600}
-.card .actions{margin-top:auto;padding-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-
-/* 버튼 — Seed: 브랜드 솔리드 + 캡슐에 가까운 라운드 */
-.btn{appearance:none;cursor:pointer;font:inherit;font-weight:700;font-size:14px;padding:10px 18px;
-  border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg);color:var(--text);
-  transition:background .12s,transform .1s,border-color .12s}
-.btn:hover{background:var(--surface)} .btn:active{transform:scale(.97)}
+/* ── 버튼 ── */
+.btn{cursor:pointer;font-weight:700;font-size:13.5px;padding:9px 16px;
+  border-radius:var(--r-md);border:1px solid var(--border2);background:var(--bg);color:var(--text3);
+  transition:background .12s,transform .1s,border-color .12s,color .12s}
+.btn:hover{background:var(--surface);color:var(--text)}
+.btn:active{transform:scale(.97)}
 .btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
-.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-size:14.5px;padding:11px 18px}
 .btn.primary:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
-.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.primary.w{width:100%}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
 
-.re-toggle{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;cursor:pointer;
-  padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius-pill);background:var(--bg);user-select:none;
-  transition:all .15s}
-.re-toggle:has(input:checked){background:var(--brand-soft);border-color:var(--brand);color:var(--text)}
-.re-toggle input{accent-color:var(--brand);margin:0}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.spacer{flex:1}
-.hint{font-size:13px;color:var(--text2)}
+/* ── 매물 카드: 고정 구조(뱃지줄→제목→역정보→스탯바→CTA)로 높이 정렬 ── */
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.card{background:var(--surface);border:1px solid transparent;border-radius:var(--r-lg);padding:20px;
+  display:flex;flex-direction:column;transition:all .16s}
+.card:hover{background:var(--bg);border-color:var(--border2);transform:translateY(-3px);box-shadow:var(--shadow-card)}
+.chiprow{display:flex;align-items:center;gap:6px;min-height:24px}
+.chip{font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;background:var(--surface2);color:var(--text2)}
+.chip.brand{color:var(--brand);background:var(--brand-soft)}
+.chip.done{color:var(--ok);background:var(--ok-soft);margin-left:auto}
+.card h3{font-size:16.5px;font-weight:800;letter-spacing:-.025em;margin:12px 0 3px;line-height:1.35}
+.where{color:var(--text2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:21px}
+.statbar{display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--bg);
+  border:1px solid var(--border);border-radius:var(--r-md);margin:14px 0 16px;
+  font-variant-numeric:tabular-nums;overflow:hidden}
+.card:hover .statbar{background:var(--surface)}
+.stat{padding:10px 6px 9px;text-align:center}
+.stat + .stat{border-left:1px solid var(--border)}
+.stat b{display:block;font-size:18px;font-weight:800;letter-spacing:-.03em;line-height:1.2}
+.stat span{font-size:11px;color:var(--text2);font-weight:600}
+.card .cta{margin-top:auto}
+.card .sub-act{display:flex;justify-content:center;margin-top:8px;min-height:18px}
+.sub-act a{font-size:12.5px;font-weight:700;color:var(--text2)}
+.sub-act a:hover{color:var(--brand)}
+.card.off{opacity:.62}
+.card.off:hover{transform:none;box-shadow:none;background:var(--surface);border-color:transparent}
+.off-note{font-size:12px;color:var(--text2);text-align:center;margin-top:8px}
 
-/* 제작 중 패널 */
-#making{display:none;border:1.5px solid var(--brand);
-  background:var(--brand-soft);border-radius:var(--radius);padding:18px 20px;margin-top:16px}
+/* ── 제작 중: 우하단 고정 진행 카드 ── */
+#making{position:fixed;right:24px;bottom:24px;z-index:30;width:min(420px,calc(100vw - 48px));
+  background:var(--bg);border:1.5px solid var(--brand);border-radius:var(--r-lg);
+  padding:16px 18px;box-shadow:var(--shadow-card);display:none}
 #making.show{display:block}
-.pulse{display:inline-block;width:9px;height:9px;border-radius:var(--radius-pill);background:var(--brand);
-  animation:p 1.2s infinite;margin-right:8px}
-@keyframes p{50%{opacity:.25}}
-.log{background:color-mix(in srgb,var(--bg) 80%,transparent);border:1px solid var(--border);border-radius:var(--radius-sm);
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;padding:12px 14px;
-  max-height:240px;overflow:auto;white-space:pre-wrap;color:var(--text2);margin-top:12px}
+#making .mk-head{display:flex;align-items:center;gap:10px;font-weight:800;font-size:14.5px}
+.spinner{width:16px;height:16px;border-radius:99px;border:2.5px solid var(--brand-soft);
+  border-top-color:var(--brand);animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+#making .mk-sub{font-size:12.5px;color:var(--text2);margin:6px 0 0 26px}
+#making details{margin:10px 0 0 26px}
+#making summary{cursor:pointer;font-size:12.5px;color:var(--text2);font-weight:700}
+.log{background:var(--surface);border-radius:var(--r-md);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;padding:10px 12px;
+  max-height:180px;overflow:auto;white-space:pre-wrap;color:var(--text2);margin-top:8px}
 
-video{width:100%;border-radius:var(--radius-sm);background:#000;aspect-ratio:16/9}
-.skel{background:var(--surface);border-radius:var(--radius);padding:18px 20px;min-height:184px}
+/* ── 완성 영상 ── */
+.vcard{background:var(--surface);border-radius:var(--r-lg);overflow:hidden;
+  display:flex;flex-direction:column;transition:all .16s;border:1px solid transparent}
+.vcard:hover{border-color:var(--border2);box-shadow:var(--shadow-card)}
+.vcard video{width:100%;aspect-ratio:16/9;background:#000;display:block}
+.vbody{padding:14px 18px 16px}
+.vbody h3{font-size:15px;font-weight:800;letter-spacing:-.02em;line-height:1.4}
+.vact{display:flex;align-items:center;gap:12px;margin-top:9px}
+.vact a{font-size:13px;font-weight:700;color:var(--brand)}
+.vact a:hover{color:var(--brand-hover)}
+.vact details{font-size:13px}
+.vact summary{cursor:pointer;color:var(--text2);font-weight:700}
+
+/* ── 상태들 ── */
+.skel{background:var(--surface);border-radius:var(--r-lg);padding:20px;min-height:212px}
 .skel div{background:var(--surface2);border-radius:8px;animation:sk 1.3s ease-in-out infinite}
 @keyframes sk{50%{opacity:.45}}
-.empty{color:var(--text2);padding:44px 0;text-align:center;background:var(--surface);
-  border-radius:var(--radius);grid-column:1/-1}
-details summary{cursor:pointer;font-size:13px;color:var(--text2);font-weight:600}
+.empty{grid-column:1/-1;color:var(--text2);text-align:center;padding:52px 20px;
+  background:var(--surface);border-radius:var(--r-lg);font-size:14px}
+.empty b{display:block;color:var(--text3);font-size:15px;margin-bottom:4px}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo"><span class="dot"></span>예린이의 부동산 뽀개기 <span class="badge brand" style="margin-left:2px">제작 스튜디오</span></div>
-  <a class="home" href="/">← yt-studio 홈</a>
+  <div class="logo"><span class="dot"></span>예린이의 부동산 뽀개기</div>
+  <span class="spacer"></span>
+  <button class="btn" onclick="syncData(this)">매물 새로 수집</button>
+  <a class="home" href="/">yt-studio 홈</a>
 </header>
 
 <main>
-  <div class="steps">
-    <div class="step on" id="st1"><b>1</b> 매물 고르기</div><span class="arrow">→</span>
-    <div class="step" id="st2"><b>2</b> 제작 중</div><span class="arrow">→</span>
-    <div class="step" id="st3"><b>3</b> 완성 영상</div>
+  <div class="hero">
+    <h1>매물을 고르면, <em>3~5분</em> 뒤 완성 영상이 나옵니다</h1>
+    <div class="meta" id="syncInfo"></div>
   </div>
 
-  <!-- ① 매물 고르기 -->
-  <h2>① 매물 고르기</h2>
-  <div class="sub">서울 청년안심주택 후보 — 카드에서 <b>이 매물로 만들기</b>를 누르면 로드뷰 캡처부터 완성 영상까지 자동입니다 (3~5분)</div>
-  <div class="row" style="margin-bottom:14px">
-    <span class="hint">투어 영상·에셋·음성 재사용은 자동으로 처리됩니다 — 고를 것 없이 매물만 선택하세요</span>
-    <span class="spacer"></span>
-    <button class="btn" onclick="syncData(this)">매물 새로 수집</button>
-    <button class="btn" onclick="loadCands()">새로고침</button>
-  </div>
-  <div class="hint" id="syncInfo" style="margin:-4px 0 12px"></div>
-  <div class="grid" id="cands"></div>
+  <!-- 매물 -->
+  <section>
+    <div class="sec-head">
+      <h2>매물 고르기</h2>
+      <span class="count" id="candCount"></span>
+      <div class="tools"><button class="btn" onclick="loadCands()">새로고침</button></div>
+    </div>
+    <div class="grid" id="cands"></div>
+  </section>
 
-  <!-- ② 제작 중 -->
-  <div id="making">
-    <div style="font-weight:700"><span class="pulse"></span><span id="mkTitle">제작 중…</span></div>
-    <div class="hint" style="margin-top:4px">순서: 로드뷰·지도 캡처 → 브리핑 덱 → 슬라이드 → 대본 → 예린 목소리(TTS) → 영상 조립</div>
-    <div class="log" id="mkLog">(대기)</div>
-  </div>
-
-  <!-- ③ 완성 영상 -->
-  <h2 id="doneHead">③ 완성 영상</h2>
-  <div class="sub">확인 후 유튜브 업로드는 사람이 합니다 (게이트 2 — 최종 검토)</div>
-  <div class="grid" id="outs"><div class="empty">아직 완성된 에피소드가 없습니다</div></div>
+  <!-- 완성 영상 -->
+  <section>
+    <div class="sec-head" id="doneHead">
+      <h2>완성 영상</h2>
+      <span class="count">확인 후 유튜브 업로드는 사람이 합니다</span>
+    </div>
+    <div class="grid" id="outs"></div>
+  </section>
 </main>
+
+<!-- 제작 중 (우하단 고정) -->
+<div id="making">
+  <div class="mk-head"><span class="spinner" id="mkSpin"></span><span id="mkTitle">제작 중…</span></div>
+  <div class="mk-sub">로드뷰 캡처 → 브리핑 덱 → 대본 → 예린 목소리 → 영상 조립</div>
+  <details><summary>진행 로그</summary><div class="log" id="mkLog">(대기)</div></details>
+</div>
 
 <script>
 const $=s=>document.querySelector(s);
 let CANDS=[], JOB=null;
-const won=n=>n?Math.round(n/10000).toLocaleString()+"만":"—";
+const won=n=>n?Math.round(n/10000).toLocaleString()+"만":null;
 
-function setStep(n){
-  [1,2,3].forEach(i=>$("#st"+i).classList.toggle("on", i===n));
+async function loadSyncInfo(flash){
+  try{
+    const i=await (await fetch("/api/realestate/syncinfo")).json();
+    $("#syncInfo").innerHTML=i.fetched_at
+      ? `<span>매물 <b>${i.count}개</b></span><span class="sep"></span>
+         <span>마지막 수집 ${i.fetched_at.slice(5,16)}</span><span class="sep"></span>
+         <span>영상·음성 재사용은 자동 처리</span>${flash?'<span class="flash">수집 완료 ✓</span>':""}`
+      : `<span>아직 수집된 매물이 없어요 — 오른쪽 위 <b>매물 새로 수집</b>을 눌러주세요</span>`;
+  }catch(e){}
+}
+
+async function syncData(btn){
+  btn.disabled=true; btn.textContent="수집 중…";
+  try{
+    const {job}=await (await fetch("/api/realestate/sync",{method:"POST"})).json();
+    let ok=false;
+    while(true){
+      const j=await (await fetch("/api/jobs/"+job)).json();
+      if(j.status!=="running"){ ok=j.status==="done";
+        if(!ok) alert("수집 실패:\n"+j.log.slice(-3).join("\n")); break }
+      await new Promise(r=>setTimeout(r,800));
+    }
+    await loadSyncInfo(ok);
+  } finally { btn.disabled=false; btn.textContent="매물 새로 수집"; loadCands(); }
 }
 
 async function loadCands(){
   $("#cands").innerHTML=Array.from({length:6},()=>`
-    <div class="skel"><div style="width:38%;height:14px"></div>
-      <div style="width:72%;height:20px;margin:14px 0 8px"></div>
-      <div style="width:55%;height:13px;margin-bottom:18px"></div>
-      <div style="width:80%;height:26px"></div></div>`).join("");
+    <div class="skel"><div style="width:30%;height:14px"></div>
+      <div style="width:70%;height:20px;margin:16px 0 8px"></div>
+      <div style="width:52%;height:13px;margin-bottom:16px"></div>
+      <div style="width:100%;height:54px;margin-bottom:16px"></div>
+      <div style="width:100%;height:40px"></div></div>`).join("");
   try{ CANDS=await (await fetch("/api/realestate/candidates?top=200")).json(); }
-  catch(e){ $("#cands").innerHTML='<div class="empty">후보를 불러오지 못했습니다 — .env의 REALESTATE_DATA_DIR 경로를 확인하세요</div>'; return }
+  catch(e){ $("#cands").innerHTML='<div class="empty"><b>후보를 불러오지 못했어요</b>서버 창(터미널)의 오류를 팀 채팅에 공유해주세요</div>'; return }
+  $("#candCount").textContent=`${CANDS.length}곳 · 역세권 점수순`;
   $("#cands").innerHTML="";
   for(const c of CANDS){
-    const d=document.createElement("div"); d.className="card";
+    const dead=c.has_coords===false;
+    const d=document.createElement("div"); d.className="card"+(dead?" off":"");
     d.innerHTML=`
-      <div class="row" style="justify-content:space-between">
-        <span class="badge brand">${c.gu||"—"}</span>
-        ${c.rendered?'<span class="badge ok">렌더됨</span>':c.has_assets?'<span class="badge">에셋 있음</span>':""}
+      <div class="chiprow">
+        <span class="chip brand">${c.gu||"—"}</span>
+        ${c.rendered?'<span class="chip done">영상 있음</span>':""}
       </div>
       <h3>${c.name}</h3>
-      <div class="where">${c.subway||c.address||""}</div>
-      <div class="stats">
-        ${c.station_m!=null?`<div><b>${c.station_m}m</b><span>역까지</span></div>`:""}
-        ${c.rent_low_won?`<div><b>${won(c.rent_low_won)}~</b><span>월세</span></div>`:""}
-        ${c.total_units?`<div><b>${c.total_units.toLocaleString()}</b><span>세대</span></div>`:""}
+      <div class="where">${c.subway||c.address||"​"}</div>
+      <div class="statbar">
+        <div class="stat"><b>${c.station_m!=null?c.station_m+"m":"—"}</b><span>역까지</span></div>
+        <div class="stat"><b>${won(c.rent_low_won)?won(c.rent_low_won)+"~":"—"}</b><span>월세</span></div>
+        <div class="stat"><b>${c.total_units?c.total_units.toLocaleString():"—"}</b><span>세대</span></div>
       </div>
-      <div class="actions">
-        ${c.station_m!=null||c.rent_low_won?"":""}
-        ${(c.home_code&&c.has_coords===false)
-          ? '<button class="btn" disabled>좌표 없음 — 제작 불가</button><span class="hint">지도·로드뷰 캡처가 안 되는 매물</span>'
-          : `<button class="btn primary" onclick="make('${c.home_code}')">이 매물로 만들기</button>`}
+      <div class="cta">
+        ${dead
+          ? '<button class="btn primary w" disabled>제작 불가</button><div class="off-note">좌표가 없어 지도·로드뷰 캡처가 안 되는 매물이에요</div>'
+          : `<button class="btn primary w" onclick="make('${c.home_code}')">이 매물로 영상 만들기</button>
+             <div class="sub-act">${c.rendered?`<a href="/media/produce/re-${c.home_code}/episode.mp4" target="_blank">기존 영상 보기 ↗</a>`:""}</div>`}
       </div>`;
     $("#cands").appendChild(d);
   }
@@ -203,9 +256,8 @@ async function make(code){
     body:JSON.stringify({home_code:code,name:c?c.name:code})});
   if(!r.ok){alert("실행 실패: "+await r.text());return}
   JOB=(await r.json()).job;
-  $("#mkTitle").textContent=(c?c.name:code)+" — 제작 중";
-  $("#making").classList.add("show"); setStep(2);
-  $("#making").scrollIntoView({behavior:"smooth",block:"center"});
+  $("#mkTitle").textContent=(c?c.name:code)+" 제작 중";
+  $("#mkSpin").style.display=""; $("#making").classList.add("show");
   pollJob();
 }
 
@@ -215,55 +267,31 @@ async function pollJob(){
   $("#mkLog").textContent=j.log.slice(-40).join("\n")||"(대기)";
   $("#mkLog").scrollTop=$("#mkLog").scrollHeight;
   if(j.status==="running"){ setTimeout(pollJob,1500); return }
-  $("#mkTitle").textContent=(j.status==="done"?"완성! 아래에서 확인하세요":"실패 — 로그를 확인하세요");
-  if(j.status==="done"){ setStep(3); loadOuts(); loadCands();
-    setTimeout(()=>$("#doneHead").scrollIntoView({behavior:"smooth"}),400); }
+  $("#mkSpin").style.display="none";
+  $("#mkTitle").textContent=(j.status==="done"?"완성! 아래 완성 영상에서 확인하세요 🎉":"실패 — 로그를 확인해주세요");
+  if(j.status==="done"){ loadOuts(); loadCands();
+    setTimeout(()=>{ $("#doneHead").scrollIntoView({behavior:"smooth"});
+      setTimeout(()=>$("#making").classList.remove("show"),4000); },600); }
   JOB=null;
 }
 
 async function loadOuts(){
   const st=await (await fetch("/api/state")).json();
   const outs=st.outputs.filter(o=>o.slug.startsWith("re-")&&o.episode);
-  if(!outs.length){$("#outs").innerHTML='<div class="empty">아직 완성된 에피소드가 없습니다</div>';return}
+  if(!outs.length){$("#outs").innerHTML='<div class="empty"><b>아직 완성된 에피소드가 없어요</b>위에서 매물을 골라 첫 영상을 만들어보세요</div>';return}
   $("#outs").innerHTML=outs.map(o=>{
-    const title=(o.meta.match(/제목:\s*(.+)/)||[])[1]||o.slug;
-    return `<div class="card">
+    const title=((o.meta.match(/제목:\s*(.+)/)||[])[1]||o.slug).replace(/ — 예린이의 부동산 뽀개기/,"");
+    return `<div class="vcard">
       <video controls preload="metadata" src="/media/produce/${o.slug}/episode.mp4"></video>
-      <h3>${title}</h3>
-      <div class="actions">
-        <a class="badge" href="/media/produce/${o.slug}/episode.mp4" download>영상 저장</a>
-        <details style="flex:1"><summary>업로드용 메타</summary>
-          <div class="log" style="max-height:160px">${(o.meta||"").replace(/</g,"&lt;")}</div></details>
+      <div class="vbody">
+        <h3>${title}</h3>
+        <div class="vact">
+          <a href="/media/produce/${o.slug}/episode.mp4" download>영상 저장</a>
+          <details><summary>업로드용 메타</summary>
+            <div class="log" style="max-height:150px">${(o.meta||"").replace(/</g,"&lt;")}</div></details>
+        </div>
       </div></div>`;
   }).join("");
-}
-
-async function loadSyncInfo(flash){
-  try{
-    const i=await (await fetch("/api/realestate/syncinfo")).json();
-    $("#syncInfo").innerHTML=i.fetched_at
-      ? `매물 <b>${i.count}개</b> (좌표 보유 ${i.with_coords}) · 마지막 수집 ${i.fetched_at}`
-        + (flash?' <span style="color:var(--ok);font-weight:700">— 수집 완료 ✓</span>':'')
-      : "아직 수집된 매물이 없습니다 — 위의 '매물 새로 수집'을 눌러주세요";
-  }catch(e){}
-}
-async function syncData(btn){
-  btn.disabled=true; btn.textContent="수집 중…";
-  try{
-    const r=await fetch("/api/realestate/sync",{method:"POST"});
-    const {job}=await r.json();
-    let ok=false;
-    while(true){
-      const j=await (await fetch("/api/jobs/"+job)).json();
-      if(j.status!=="running"){
-        ok=j.status==="done";
-        if(!ok) alert("수집 실패:\n"+j.log.slice(-3).join("\n"));
-        break;
-      }
-      await new Promise(res=>setTimeout(res,800));
-    }
-    await loadSyncInfo(ok);
-  } finally { btn.disabled=false; btn.textContent="매물 새로 수집"; loadCands(); }
 }
 
 loadCands(); loadOuts(); loadSyncInfo(false);
