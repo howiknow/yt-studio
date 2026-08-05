@@ -1,6 +1,13 @@
-// 예린이의 부동산 뽀개기 — 데이터 주도 매물 브리핑 덱 생성기.
+// 예린이의 부동산 뽀개기 — 데이터 주도 매물 브리핑 덱 생성기 (방송 그래픽판).
 // Usage: node deck.js <spec.json> <out.pptx>
 // spec: episode.py의 build_spec() 산출물. slides[] 순서대로 렌더한다.
+//
+// 설계 원칙 (문서용 PPT가 아니라 "영상에 얹는 그래픽"):
+//  1. 한 화면 한 메시지 — 문장 대신 숫자·키워드
+//  2. 거대 타이포 — 모바일 시청 기준, 숫자 96~120pt / 헤드 48~60pt / 본문 20pt+
+//  3. 하단 안전영역(SAFE_Y) 아래로는 아무것도 두지 않는다 — 렌더가 자막을 굽는 자리
+//  4. 이미지는 풀블리드 또는 화면 절반 이상 — 잘린 썸네일 금지
+//  5. 흰 배경 카드·번호 동그라미 같은 PPT 클리셰 금지
 const pptxgen = require('pptxgenjs');
 const fs = require('fs');
 
@@ -8,155 +15,203 @@ const [specPath, outPath] = process.argv.slice(2);
 const spec = JSON.parse(fs.readFileSync(specPath, 'utf-8'));
 
 const pres = new pptxgen();
-pres.layout = 'LAYOUT_WIDE'; // 13.33 x 7.5
+pres.layout = 'LAYOUT_WIDE'; // 13.33 x 7.5 in
 const W = 13.33, H = 7.5;
+const SAFE_Y = 5.78;   // 이 아래는 자막 영역 — 핵심 요소 배치 금지
+const M = 0.86;        // 좌우 기본 여백
 
-const INK = '23262E', AMBER = 'FFB300', MUTED = '6B7280', CARD = 'F5F6F8', WHITE = 'FFFFFF';
+// 채널 팔레트 (Seed carrot 계열 + 딥 잉크)
+const INK = '14161A', INK2 = '1E222A', BRAND = 'FF6600', BRAND_L = 'FF9364',
+      WHITE = 'FFFFFF', DIM = 'A8ADB6', LINE = '2E333C';
 const KR = 'Apple SD Gothic Neo';
 
-function chip(s, x, y, text, w) {
-  s.addShape('roundRect', { x, y, w, h: 0.42, rectRadius: 0.21, fill: { color: AMBER }, line: { type: 'none' } });
-  s.addText(text, { x, y, w, h: 0.42, align: 'center', valign: 'middle', margin: 0, fontFace: KR, fontSize: 12, bold: true, color: INK });
-}
-function captionBar(s, head, body) {
-  s.addShape('rect', { x: 0, y: H - 1.28, w: W, h: 1.28, fill: { color: INK, transparency: 18 }, line: { type: 'none' } });
-  s.addText([
-    { text: head + '  ', options: { fontSize: 17, bold: true } },
-    { text: body, options: { fontSize: 13.5, color: 'D8DADF' } },
-  ], { x: 0.6, y: H - 1.28, w: W - 1.2, h: 1.28, fontFace: KR, color: WHITE, valign: 'middle', margin: 0 });
-}
-function fullBleed(s, img) {
-  s.background = { color: INK };
-  s.addImage({ path: img, x: 0, y: 0, w: W, h: H, sizing: { type: 'cover', w: W, h: H } });
-}
-function title(s, text) {
-  s.addText(text, { x: 0.7, y: 0.55, w: 12, h: 0.8, fontFace: KR, fontSize: 32, bold: true, color: INK, margin: 0 });
+// ── 공통 파츠 ───────────────────────────────────────────────────────────────
+const rect = (s, o) => s.addShape('rect', { line: { type: 'none' }, ...o });
+
+const SCRIM = require('path').resolve(__dirname, '../../../data/assets/realestate/_ui/scrim.png');
+
+/** 이미지 위 가독성 확보용 스크림 — 알파 그라데이션 PNG (사각형을 겹치면 계단이 보인다) */
+function scrim(s, topY = 0) {
+  s.addImage({ path: SCRIM, x: 0, y: topY, w: W, h: H - topY });
 }
 
+/** 글자 수에 따라 폰트를 줄여 한 줄에 담는다 (오버플로 방지) */
+function fitSize(text, base, perChar = 1.9, min = 26) {
+  const over = Math.max(0, String(text).length - 7);
+  return Math.max(min, Math.round(base - over * perChar));
+}
+/** 좌상단 카테고리 칩 */
+function kicker(s, text, color = BRAND) {
+  const w = Math.max(1.5, text.length * 0.19 + 0.6);
+  s.addShape('roundRect', { x: M, y: 0.62, w, h: 0.5, rectRadius: 0.25, fill: { color }, line: { type: 'none' } });
+  s.addText(text, { x: M, y: 0.62, w, h: 0.5, align: 'center', valign: 'middle', margin: 0,
+    fontFace: KR, fontSize: 15, bold: true, color: WHITE, charSpacing: -0.3 });
+}
+/** 잉크 배경 + 상단 킥커 + 큰 헤드라인 (텍스트 슬라이드 공통 헤더) */
+function head(s, kick, headline) {
+  s.background = { color: INK };
+  s.addText(kick, { x: M, y: 0.72, w: 10, h: 0.42, margin: 0,
+    fontFace: KR, fontSize: 16, bold: true, color: BRAND, charSpacing: 0.6 });
+  s.addText(headline, { x: M, y: 1.22, w: W - M * 2, h: 1.0, margin: 0,
+    fontFace: KR, fontSize: 46, bold: true, color: WHITE, charSpacing: -1.2 });
+}
+/** 안전영역 바로 위에 놓는 한 줄 강조 (오렌지 좌측 바 + 텍스트) */
+function footline(s, text, y = 4.98) {
+  rect(s, { x: M, y, w: 0.09, h: 0.66, fill: { color: BRAND } });
+  s.addText(text, { x: M + 0.32, y: y - 0.04, w: W - M * 2 - 0.4, h: 0.74, valign: 'middle', margin: 0,
+    fontFace: KR, fontSize: 20, color: 'E6E8EC', charSpacing: -0.4 });
+}
+
+// ── 슬라이드 렌더러 ─────────────────────────────────────────────────────────
 const R = {
+  /* 커버 — 풀블리드 + 거대 단지명 */
   cover(p) {
     const s = pres.addSlide();
-    fullBleed(s, p.image);
-    s.addShape('rect', { x: 0, y: 0, w: W, h: H, fill: { color: '15171C', transparency: 40 }, line: { type: 'none' } });
-    chip(s, 0.7, 0.75, '예린이의 부동산 뽀개기', 2.9);
-    s.addText(p.name, { x: 0.65, y: 2.6, w: 12.0, h: 1.3, fontFace: KR, fontSize: 52, bold: true, color: WHITE, margin: 0 });
-    s.addText(p.subtitle, { x: 0.68, y: 3.95, w: 11.8, h: 0.55, fontFace: KR, fontSize: 19, color: 'E8E9EC', margin: 0 });
-    s.addText(p.footer, { x: 0.68, y: 6.75, w: 10, h: 0.4, fontFace: KR, fontSize: 11.5, color: 'C9CCD3', margin: 0 });
+    s.background = { color: INK };
+    if (p.image) s.addImage({ path: p.image, x: 0, y: 0, w: W, h: H, sizing: { type: 'cover', w: W, h: H } });
+    scrim(s);
+    kicker(s, '예린이의 부동산 뽀개기');
+    s.addText(p.name, { x: M, y: 3.42, w: W - M * 2, h: 1.5, margin: 0,
+      fontFace: KR, fontSize: 62, bold: true, color: WHITE, charSpacing: -2 });
+    s.addText(p.subtitle, { x: M, y: 4.98, w: W - M * 2, h: 0.6, margin: 0,
+      fontFace: KR, fontSize: 21, color: 'D5D8DD', charSpacing: -0.4 });
   },
+
+  /* 결론 — 거대 숫자 3분할 + 한 줄 평 */
   summary(p) {
     const s = pres.addSlide();
-    s.background = { color: WHITE };
-    title(s, '오늘의 결론부터 말씀드리면');
-    const cw = 2.86, gap = 0.32;
-    p.cards.forEach((c, i) => {
-      const x = 0.7 + i * (cw + gap);
-      s.addShape('roundRect', { x, y: 1.75, w: cw, h: 2.5, rectRadius: 0.12, fill: { color: CARD }, line: { type: 'none' } });
-      s.addShape('ellipse', { x: x + 0.28, y: 2.03, w: 0.42, h: 0.42, fill: { color: AMBER }, line: { type: 'none' } });
-      s.addText(String(i + 1), { x: x + 0.28, y: 2.03, w: 0.42, h: 0.42, align: 'center', valign: 'middle', margin: 0, fontFace: KR, fontSize: 14, bold: true, color: INK });
-      s.addText(c.big, { x: x + 0.28, y: 2.6, w: cw - 0.5, h: 0.75, fontFace: KR, fontSize: 26, bold: true, color: INK, margin: 0 });
-      s.addText(c.small, { x: x + 0.28, y: 3.38, w: cw - 0.5, h: 0.8, fontFace: KR, fontSize: 12.5, color: MUTED, margin: 0, lineSpacingMultiple: 1.15 });
+    head(s, '오늘의 결론', '먼저 숫자 세 개만 보세요');
+    const cards = p.cards.slice(0, 3);
+    const colW = (W - M * 2) / cards.length;
+    cards.forEach((c, i) => {
+      const x = M + i * colW;
+      const big = String(c.big).replace(/^월\s*/, '');
+      s.addText(big, { x: x + 0.06, y: 2.55, w: colW - 0.3, h: 1.3, margin: 0,
+        fontFace: KR, fontSize: fitSize(big, 62), bold: true,
+        color: i === 0 ? BRAND : WHITE, charSpacing: -2 });
+      const label = (c.small || '').split('\n')[0];
+      s.addText(label, { x: x + 0.08, y: 3.9, w: colW - 0.35, h: 0.5, margin: 0,
+        fontFace: KR, fontSize: 17, color: DIM, charSpacing: -0.3 });
     });
-    s.addShape('roundRect', { x: 0.7, y: 4.75, w: 11.93, h: 1.9, rectRadius: 0.12, fill: { color: INK }, line: { type: 'none' } });
-    s.addText([
-      { text: '한 줄 평  ', options: { bold: true, color: AMBER, fontSize: 16 } },
-      { text: p.oneliner, options: { color: 'ECEDEF', fontSize: 15.5 } },
-    ], { x: 1.1, y: 4.95, w: 11.1, h: 1.5, fontFace: KR, valign: 'middle', margin: 0, lineSpacingMultiple: 1.25 });
+    footline(s, p.oneliner.replace(/^"|"$/g, ''));
   },
+
+  /* 지도 — 우측 풀높이 이미지 + 좌측 텍스트 패널 (겹침 없음) */
   map(p) {
     const s = pres.addSlide();
-    s.background = { color: WHITE };
-    title(s, p.title);
-    s.addImage({ path: p.image, x: 6.35, y: 0.75, w: 6.3, h: 5.95, sizing: { type: 'cover', w: 6.3, h: 5.95 } });
-    s.addText(p.credit, { x: 6.35, y: 6.85, w: 6.3, h: 0.35, fontFace: KR, fontSize: 11, color: MUTED, margin: 0, align: 'right' });
-    let y = 1.75;
-    p.items.forEach(([h, b], i) => {
-      s.addShape('ellipse', { x: 0.7, y: y + 0.03, w: 0.38, h: 0.38, fill: { color: AMBER }, line: { type: 'none' } });
-      s.addText(String(i + 1), { x: 0.7, y: y + 0.03, w: 0.38, h: 0.38, align: 'center', valign: 'middle', margin: 0, fontFace: KR, fontSize: 13, bold: true, color: INK });
-      s.addText(h, { x: 1.25, y, w: 4.6, h: 0.45, fontFace: KR, fontSize: 17, bold: true, color: INK, margin: 0 });
-      s.addText(b, { x: 1.25, y: y + 0.47, w: 4.55, h: 1.05, fontFace: KR, fontSize: 13, color: MUTED, margin: 0, lineSpacingMultiple: 1.2 });
-      y += 1.72;
-    });
+    s.background = { color: INK };
+    const imgX = 5.9;
+    s.addImage({ path: p.image, x: imgX, y: 0, w: W - imgX, h: H, sizing: { type: 'cover', w: W - imgX, h: H } });
+    rect(s, { x: 0, y: 0, w: imgX, h: H, fill: { color: INK } });          // 텍스트 패널 바탕
+    rect(s, { x: imgX - 0.02, y: 0, w: 0.04, h: H, fill: { color: BRAND } }); // 경계 액센트
+    s.addText(p.title, { x: M, y: 0.95, w: imgX - M - 0.45, h: 1.6, margin: 0,
+      fontFace: KR, fontSize: fitSize(p.title, 42, 1.15, 26), bold: true, color: WHITE,
+      charSpacing: -1.2, lineSpacingMultiple: 1.05 });
+    let y = 2.72;
+    for (const [h1, b] of p.items.slice(0, 3)) {
+      s.addText(h1, { x: M, y, w: imgX - M - 0.5, h: 0.4, margin: 0,
+        fontFace: KR, fontSize: 17, bold: true, color: BRAND, charSpacing: -0.2 });
+      s.addText(b, { x: M, y: y + 0.42, w: imgX - M - 0.55, h: 0.72, margin: 0,
+        fontFace: KR, fontSize: 18, color: 'D5D8DD', charSpacing: -0.4, lineSpacingMultiple: 1.15 });
+      y += 1.22;
+    }
   },
-  photo(p) { // 로드뷰/내부 풀블리드 + 칩 + 캡션바
+
+  /* 로드뷰·내부 — 풀블리드 + 하단 헤드라인 */
+  photo(p) {
     const s = pres.addSlide();
-    fullBleed(s, p.image);
-    chip(s, 0.6, 0.55, p.chip, 2.9);
-    captionBar(s, p.head, p.body);
+    s.background = { color: INK };
+    s.addImage({ path: p.image, x: 0, y: 0, w: W, h: H, sizing: { type: 'cover', w: W, h: H } });
+    scrim(s);
+    kicker(s, p.chip.replace(/\s+/g, ' '));
+    s.addText(p.head, { x: M, y: 4.12, w: W - M * 2, h: 0.95, margin: 0,
+      fontFace: KR, fontSize: fitSize(p.head, 42, 0.55, 28), bold: true, color: WHITE, charSpacing: -1.2 });
+    s.addText(p.body.split('(')[0].trim(), { x: M, y: 5.08, w: W - M * 2, h: 0.6, margin: 0,
+      fontFace: KR, fontSize: 19, color: 'D5D8DD', charSpacing: -0.4 });
   },
+
+  /* 개요 — 좌측 이미지 블리드 + 우측 키/값 */
   overview(p) {
     const s = pres.addSlide();
-    s.background = { color: WHITE };
-    title(s, '단지 개요');
-    s.addImage({ path: p.image, x: 0.7, y: 1.7, w: 6.4, h: 4.5, sizing: { type: 'cover', w: 6.4, h: 4.5 } });
-    s.addText(p.credit, { x: 0.7, y: 6.3, w: 6.4, h: 0.35, fontFace: KR, fontSize: 11, color: MUTED, margin: 0 });
-    let y = 1.75;
-    p.rows.forEach(([k, v], i) => {
-      if (i > 0) s.addShape('line', { x: 7.55, y, w: 5.1, h: 0, line: { color: 'E5E7EB', width: 0.75 } });
-      s.addText(k, { x: 7.55, y: y + 0.08, w: 1.5, h: 0.55, fontFace: KR, fontSize: 13, bold: true, color: MUTED, margin: 0, valign: 'middle' });
-      s.addText(v, { x: 9.1, y: y + 0.08, w: 3.6, h: 0.55, fontFace: KR, fontSize: 13.5, color: INK, margin: 0, valign: 'middle' });
-      y += 0.68;
-    });
+    s.background = { color: INK };
+    const imgW = 5.6;
+    if (p.image) s.addImage({ path: p.image, x: 0, y: 0, w: imgW, h: H, sizing: { type: 'cover', w: imgW, h: H } });
+    rect(s, { x: imgW, y: 0, w: W - imgW, h: H, fill: { color: INK } });
+    rect(s, { x: imgW, y: 0, w: 0.04, h: H, fill: { color: BRAND } });
+    const x = imgW + 0.7;
+    s.addText('단지 개요', { x, y: 0.9, w: W - x - 0.6, h: 0.8, margin: 0,
+      fontFace: KR, fontSize: 40, bold: true, color: WHITE, charSpacing: -1.2 });
+    let y = 2.05;
+    for (const [k, v] of p.rows.slice(0, 6)) {
+      s.addText(k, { x, y, w: 1.9, h: 0.5, valign: 'middle', margin: 0,
+        fontFace: KR, fontSize: 16, bold: true, color: BRAND, charSpacing: -0.2 });
+      s.addText(String(v), { x: x + 1.95, y, w: W - x - 2.5, h: 0.5, valign: 'middle', margin: 0,
+        fontFace: KR, fontSize: 19, color: WHITE, charSpacing: -0.4 });
+      y += 0.62;
+      if (y > SAFE_Y - 0.6) break;
+    }
   },
+
+  /* 가격 — 거대 숫자 2분할 */
   price(p) {
     const s = pres.addSlide();
-    s.background = { color: WHITE };
-    title(s, '그래서, 얼마냐면요');
-    [[0.7, '보증금', p.deposit, '최저 타입 기준 · 타입/전환 조건에 따라 상이'],
-     [6.78, '월 임대료', p.rent, '보증금을 높이면 월세를 낮추는 전환형 운영']].forEach(([x, label, big, note]) => {
-      s.addShape('roundRect', { x, y: 1.7, w: 5.85, h: 2.6, rectRadius: 0.12, fill: { color: CARD }, line: { type: 'none' } });
-      s.addText(label, { x: x + 0.4, y: 1.95, w: 3, h: 0.4, fontFace: KR, fontSize: 14, bold: true, color: MUTED, margin: 0 });
-      s.addText(big, { x: x + 0.4, y: 2.4, w: 5.0, h: 1.1, fontFace: KR, fontSize: 44, bold: true, color: INK, margin: 0 });
-      s.addText(note, { x: x + 0.4, y: 3.6, w: 5.2, h: 0.4, fontFace: KR, fontSize: 11.5, color: MUTED, margin: 0 });
+    head(s, '비용', '그래서, 얼마냐면요');
+    const half = (W - M * 2) / 2;
+    [['보증금', p.deposit, BRAND], ['월 임대료', p.rent, WHITE]].forEach(([label, val, col], i) => {
+      const x = M + i * half;
+      if (i) rect(s, { x: x - 0.02, y: 2.66, w: 0.02, h: 1.9, fill: { color: LINE } });
+      s.addText(label, { x: x + 0.06, y: 2.62, w: half - 0.4, h: 0.45, margin: 0,
+        fontFace: KR, fontSize: 18, bold: true, color: DIM, charSpacing: -0.2 });
+      s.addText(String(val).replace(/\s*~$/, ''), { x: x + 0.04, y: 3.08, w: half - 0.3, h: 1.35, margin: 0,
+        fontFace: KR, fontSize: fitSize(String(val), 66, 3.2, 34), bold: true, color: col, charSpacing: -2.4 });
     });
-    s.addText('입주 자격 (요약)', { x: 0.7, y: 4.7, w: 4, h: 0.45, fontFace: KR, fontSize: 17, bold: true, color: INK, margin: 0 });
-    s.addText([
-      { text: '만 19~39세 무주택 청년', options: { bullet: true, breakLine: true } },
-      { text: '소득·자산 기준 충족 (전년도 도시근로자 월평균소득 기준 적용)', options: { bullet: true, breakLine: true } },
-      { text: '자동차 보유 기준 등 세부 조건은 모집공고문 기준', options: { bullet: true } },
-    ], { x: 0.85, y: 5.2, w: 11.6, h: 1.25, fontFace: KR, fontSize: 13.5, color: INK, margin: 0, paraSpaceAfter: 6 });
-    s.addText('※ 가격·자격은 서울시 청년안심주택 공개 데이터 기준 요약입니다. 실제 계약 조건은 반드시 최신 모집공고문으로 확인하세요.', {
-      x: 0.7, y: 6.7, w: 11.9, h: 0.5, fontFace: KR, fontSize: 11, color: MUTED, margin: 0 });
+    footline(s, '보증금을 올리면 월세를 낮추는 전환형 — 자격·조건은 최신 모집공고문 기준');
   },
+
+  /* 평점 — 게이지 바 (별점 표 대신) */
   rating(p) {
     const s = pres.addSlide();
-    s.background = { color: WHITE };
-    title(s, '예린이의 부동산 뽀개기 평점');
-    let y = 1.75;
-    p.rows.forEach(([name, score, note]) => {
-      const full = Math.floor(score), half = score % 1 >= 0.5;
-      s.addText(String(name), { x: 0.7, y, w: 2.5, h: 0.5, fontFace: KR, fontSize: 15.5, bold: true, color: INK, margin: 0, valign: 'middle' });
-      s.addText([
-        { text: '★'.repeat(full) + (half ? '☆' : ''), options: { color: AMBER, fontSize: 20, bold: true } },
-        { text: '★'.repeat(5 - full - (half ? 1 : 0)), options: { color: 'D9DBE0', fontSize: 20, bold: true } },
-        { text: '  ' + score.toFixed(1), options: { color: INK, fontSize: 15, bold: true } },
-      ], { x: 3.3, y, w: 2.6, h: 0.5, fontFace: KR, margin: 0, valign: 'middle' });
-      s.addText(String(note), { x: 6.1, y, w: 6.5, h: 0.5, fontFace: KR, fontSize: 12.5, color: MUTED, margin: 0, valign: 'middle' });
-      y += 0.78;
-    });
-    s.addShape('roundRect', { x: 0.7, y: 5.85, w: 11.93, h: 1.15, rectRadius: 0.12, fill: { color: INK }, line: { type: 'none' } });
-    s.addText([
-      { text: '뽀개기 총점  ', options: { bold: true, color: AMBER, fontSize: 17 } },
-      { text: p.total.toFixed(1) + ' / 5.0', options: { bold: true, color: WHITE, fontSize: 24 } },
-      { text: '   — ' + p.comment, options: { color: 'ECEDEF', fontSize: 14.5 } },
-    ], { x: 1.1, y: 5.85, w: 11.1, h: 1.15, fontFace: KR, valign: 'middle', margin: 0 });
-    s.addText('※ 평점은 공개 데이터·로드뷰·영상 조사 기반 자동 산출 초안입니다 (발행 전 사람 검토).', { x: 0.7, y: 7.08, w: 11.9, h: 0.32, fontFace: KR, fontSize: 10.5, color: MUTED, margin: 0 });
+    head(s, '예린이의 평가', `뽀개기 총점  ${p.total.toFixed(1)} / 5.0`);
+    const barX = 4.35, barW = 6.2;
+    let y = 2.62;
+    for (const [name, score, note] of p.rows.slice(0, 5)) {
+      s.addText(name, { x: M, y: y - 0.06, w: 3.3, h: 0.5, valign: 'middle', margin: 0,
+        fontFace: KR, fontSize: 19, bold: true, color: WHITE, charSpacing: -0.4 });
+      rect(s, { x: barX, y: y + 0.07, w: barW, h: 0.26, fill: { color: INK2 } });
+      rect(s, { x: barX, y: y + 0.07, w: barW * (score / 5), h: 0.26, fill: { color: score >= 4.5 ? BRAND : BRAND_L } });
+      s.addText(score.toFixed(1), { x: barX + barW + 0.22, y: y - 0.06, w: 0.9, h: 0.5, valign: 'middle', margin: 0,
+        fontFace: KR, fontSize: 22, bold: true, color: WHITE });
+      s.addText(String(note), { x: barX + barW + 1.15, y: y - 0.06, w: W - barX - barW - 1.9, h: 0.5, valign: 'middle', margin: 0,
+        fontFace: KR, fontSize: 14, color: DIM, charSpacing: -0.3 });
+      y += 0.62;
+    }
+    footline(s, p.comment.replace(/^"|"$/g, ''), 5.06);
   },
+
+  /* 총평 — 좌(오렌지) / 우(잉크) 색면 대비 */
   verdict(p) {
     const s = pres.addSlide();
     s.background = { color: INK };
-    s.addText('총평 — 예린이가 솔직하게 뽀개보면', { x: 0.7, y: 0.55, w: 12, h: 0.8, fontFace: KR, fontSize: 32, bold: true, color: WHITE, margin: 0 });
-    [[0.7, '이건 좋았다', p.pros], [6.78, '이건 따져보자', p.cons]].forEach(([x, label, items]) => {
-      s.addShape('roundRect', { x, y: 1.7, w: 5.85, h: 3.7, rectRadius: 0.12, fill: { color: '2E3340' }, line: { type: 'none' } });
-      s.addText(label, { x: x + 0.35, y: 1.95, w: 3, h: 0.45, fontFace: KR, fontSize: 17, bold: true, color: AMBER, margin: 0 });
-      s.addText(items.map((t, i) => ({ text: t, options: { bullet: true, breakLine: i < items.length - 1 } })),
-        { x: x + 0.35, y: 2.55, w: 5.15, h: 2.6, fontFace: KR, fontSize: 14, color: 'ECEDEF', margin: 0, paraSpaceAfter: 10 });
-    });
-    s.addText(p.closing, { x: 0.7, y: 5.75, w: 11.93, h: 0.7, fontFace: KR, fontSize: 18, bold: true, color: WHITE, margin: 0, align: 'center', valign: 'middle' });
-    s.addText(p.footer, { x: 0.7, y: 6.75, w: 11.93, h: 0.4, fontFace: KR, fontSize: 11.5, color: 'AEB2BC', margin: 0, align: 'center' });
+    const half = W / 2;
+    rect(s, { x: 0, y: 0, w: half, h: SAFE_Y + 0.4, fill: { color: BRAND } });
+    rect(s, { x: half, y: 0, w: half, h: SAFE_Y + 0.4, fill: { color: INK2 } });
+    const col = (x, label, items, labelColor, textColor) => {
+      s.addText(label, { x: x + 0.7, y: 0.86, w: half - 1.3, h: 0.6, margin: 0,
+        fontFace: KR, fontSize: 30, bold: true, color: labelColor, charSpacing: -1 });
+      let y = 1.86;
+      for (const t of items.slice(0, 4)) {
+        rect(s, { x: x + 0.7, y: y + 0.16, w: 0.16, h: 0.16, fill: { color: labelColor } });
+        s.addText(t, { x: x + 1.0, y, w: half - 1.75, h: 0.86, margin: 0,
+          fontFace: KR, fontSize: 18, color: textColor, charSpacing: -0.4, lineSpacingMultiple: 1.12 });
+        y += 0.92;
+      }
+    };
+    col(0, '이건 좋았다', p.pros, '2A1200', 'FFF0E4');
+    col(half, '이건 따져보자', p.cons, BRAND, 'D5D8DD');
+    s.addText(p.closing.replace(/^"|"$/g, ''), { x: M, y: SAFE_Y - 0.55, w: W - M * 2, h: 0.7, align: 'center', margin: 0,
+      fontFace: KR, fontSize: 22, bold: true, color: WHITE, charSpacing: -0.6 });
   },
 };
 
-for (const slide of spec.slides) {
-  R[slide.type](slide);
-}
+for (const slide of spec.slides) R[slide.type](slide);
 pres.writeFile({ fileName: outPath }).then(() => console.log('deck written', outPath, spec.slides.length, 'slides'));

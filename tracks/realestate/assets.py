@@ -81,6 +81,7 @@ def capture_roadview_set(lat: float, lng: float, out_dir: pathlib.Path) -> dict:
     default = out_dir / "rv_front.png"
     stdout = _node("capture.js", f"https://map.kakao.com/link/roadview/{lat},{lng}",
                    str(default), "10000")
+    _trim_roadview_ui(default)
     shots["front"] = str(default)
     params = _parse_final_url(stdout)
 
@@ -97,10 +98,12 @@ def capture_roadview_set(lat: float, lng: float, out_dir: pathlib.Path) -> dict:
 
         tower = out_dir / "rv_tower.png"
         _node("capture.js", rv_url(base_pan, -35), str(tower), "9000")
+        _trim_roadview_ui(tower)
         shots["tower"] = str(tower)
 
         reverse = out_dir / "rv_street.png"
         _node("capture.js", rv_url((base_pan + 180) % 360, 0), str(reverse), "9000")
+        _trim_roadview_ui(reverse)
         shots["street"] = str(reverse)
 
     return {"shots": shots, "params": params}
@@ -111,41 +114,79 @@ def _crop_sidebar(src: pathlib.Path, dst: pathlib.Path) -> None:
     im.crop((_SIDEBAR_W, 0, im.width, im.height)).save(dst)
 
 
+def _trim_map_ui(path: pathlib.Path) -> None:
+    """카카오맵 상·하단 UI(검색 breadcrumb·날씨·로고·스케일바)를 잘라낸다.
+
+    슬라이드에 지도 UI가 박혀 있으면 '캡처한 티'가 나서 완성도가 떨어진다.
+    """
+    im = Image.open(path)
+    im.crop((0, 58, int(im.width * 0.955), im.height - 34)).save(path)
+
+
+def _trim_roadview_ui(path: pathlib.Path) -> None:
+    """로드뷰의 오버레이 UI 제거 — 좌상단 주소·날짜, 우상단 닫기, 좌하단 미니맵, 우측 컨트롤."""
+    im = Image.open(path)
+    w, h = im.size
+    im.crop((int(w * 0.035), int(h * 0.075), int(w * 0.965), int(h * 0.80))).save(path)
+
+
+def make_scrim(out_path: pathlib.Path, top_alpha: int = 0, bottom_alpha: int = 236) -> pathlib.Path:
+    """하단으로 갈수록 진해지는 잉크 그라데이션 PNG (pptxgenjs가 그라데이션 미지원).
+
+    사각형을 겹쳐 쓰면 계단처럼 층이 보여서, 알파 그라데이션 이미지를 얹는다.
+    """
+    if out_path.exists():
+        return out_path
+    w, h = 1920, 1080
+    grad = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    px = grad.load()
+    for y in range(h):
+        t = y / (h - 1)
+        a = int(top_alpha + (bottom_alpha - top_alpha) * (t ** 2.1))  # 아래쪽에 집중
+        for x in range(0, w, 1):
+            px[x, y] = (20, 22, 26, a)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    grad.save(out_path)
+    return out_path
+
+
+def _mark_center(path: pathlib.Path, ring: int = 52) -> None:
+    """지도 중앙(=대상 좌표)에 브랜드 링 마커를 직접 그린다.
+
+    카카오 기본 마커/정보창 팝업을 띄우면 UI가 화면에 박히므로, 팝업 없는
+    좌표 URL로 캡처한 뒤 마커만 우리가 그린다.
+    """
+    im = Image.open(path).convert("RGB")
+    d = ImageDraw.Draw(im, "RGBA")
+    x, y = im.width // 2, im.height // 2
+    d.ellipse([x - ring - 10, y - ring - 10, x + ring + 10, y + ring + 10], fill=(255, 102, 0, 38))
+    d.ellipse([x - ring, y - ring, x + ring, y + ring], outline=(255, 102, 0), width=7)
+    d.ellipse([x - 13, y - 13, x + 13, y + 13], fill=(255, 102, 0))
+    im.save(path)
+
+
 def capture_map_set(
     lat: float, lng: float, name: str, out_dir: pathlib.Path,
     urlx: str | None = None, urly: str | None = None,
 ) -> dict[str, str]:
-    """지도 2컷: 근접(마커+정보창) / 광역(위치 링). 광역은 roadview 캡처의 urlX/urlY 필요."""
+    """지도 2컷: 근접 / 광역. 둘 다 팝업 없는 좌표 URL로 찍고 마커는 직접 그린다."""
     out_dir = out_dir.resolve()  # node 러너는 js/에서 실행 — 절대경로 필수
     out_dir.mkdir(parents=True, exist_ok=True)
     shots: dict[str, str] = {}
+    if not (urlx and urly):
+        return shots
 
-    close_raw = out_dir / "_map_close_raw.png"
-    close = out_dir / "map_close.png"
-    _node("capture.js",
-          f"https://map.kakao.com/link/map/{urllib.parse.quote(name)},{lat},{lng}",
-          str(close_raw), "9000")
-    _crop_sidebar(close_raw, close)
-    close_raw.unlink(missing_ok=True)
-    shots["close"] = str(close)
-
-    if urlx and urly:
-        wide_raw = out_dir / "_map_wide_raw.png"
-        wide = out_dir / "map_wide.png"
+    for key, level in (("close", "3"), ("wide", "7")):
+        raw = out_dir / f"_map_{key}_raw.png"
+        dst = out_dir / f"map_{key}.png"
         _node("capture.js",
-              f"https://map.kakao.com/?urlX={urlx}&urlY={urly}&urlLevel=7&map_type=TYPE_MAP",
-              str(wide_raw), "9000")
-        _crop_sidebar(wide_raw, wide)
-        wide_raw.unlink(missing_ok=True)
-        # 카카오맵은 urlX/urlY를 '사이드바 제외 지도 영역'의 중앙에 놓는다
-        # → 사이드바(390px)를 크롭한 이미지에서는 정확히 가로 중앙.
-        im = Image.open(wide).convert("RGB")
-        d = ImageDraw.Draw(im)
-        x, y = im.width // 2, im.height // 2
-        d.ellipse([x - 48, y - 48, x + 48, y + 48], outline=(230, 50, 50), width=6)
-        d.ellipse([x - 12, y - 12, x + 12, y + 12], fill=(230, 50, 50))
-        im.save(wide)
-        shots["wide"] = str(wide)
+              f"https://map.kakao.com/?urlX={urlx}&urlY={urly}&urlLevel={level}&map_type=TYPE_MAP",
+              str(raw), "9000")
+        _crop_sidebar(raw, dst)
+        raw.unlink(missing_ok=True)
+        _trim_map_ui(dst)
+        _mark_center(dst, ring=64 if key == "close" else 46)
+        shots[key] = str(dst)
 
     return shots
 
