@@ -168,24 +168,24 @@ const R = {
     footline(s, '보증금을 올리면 월세를 낮추는 전환형 — 자격·조건은 최신 모집공고문 기준');
   },
 
-  /* 평점 — 게이지 바 (별점 표 대신) */
+  /* 평점 — 게이지 바 (별점 표·설명문 없이 점수만; 설명은 내레이션이 한다) */
   rating(p) {
     const s = pres.addSlide();
     head(s, '예린이의 평가', `뽀개기 총점  ${p.total.toFixed(1)} / 5.0`);
-    const barX = 4.35, barW = 6.2;
-    let y = 2.62;
-    for (const [name, score, note] of p.rows.slice(0, 5)) {
-      s.addText(name, { x: M, y: y - 0.06, w: 3.3, h: 0.5, valign: 'middle', margin: 0,
-        fontFace: KR, fontSize: 19, bold: true, color: WHITE, charSpacing: -0.4 });
-      rect(s, { x: barX, y: y + 0.07, w: barW, h: 0.26, fill: { color: INK2 } });
-      rect(s, { x: barX, y: y + 0.07, w: barW * (score / 5), h: 0.26, fill: { color: score >= 4.5 ? BRAND : BRAND_L } });
-      s.addText(score.toFixed(1), { x: barX + barW + 0.22, y: y - 0.06, w: 0.9, h: 0.5, valign: 'middle', margin: 0,
-        fontFace: KR, fontSize: 22, bold: true, color: WHITE });
-      s.addText(String(note), { x: barX + barW + 1.15, y: y - 0.06, w: W - barX - barW - 1.9, h: 0.5, valign: 'middle', margin: 0,
-        fontFace: KR, fontSize: 14, color: DIM, charSpacing: -0.3 });
-      y += 0.62;
+    s.addText(p.comment.replace(/^"|"$/g, ''), { x: M, y: 2.24, w: W - M * 2, h: 0.5, margin: 0,
+      fontFace: KR, fontSize: 18, color: DIM, charSpacing: -0.4 });
+    const barX = 4.6, barW = W - barX - M - 1.15;
+    let y = 3.02;
+    for (const [name, score] of p.rows.slice(0, 5)) {
+      s.addText(name, { x: M, y: y - 0.08, w: 3.5, h: 0.5, valign: 'middle', margin: 0,
+        fontFace: KR, fontSize: 20, bold: true, color: WHITE, charSpacing: -0.4 });
+      rect(s, { x: barX, y: y + 0.06, w: barW, h: 0.28, fill: { color: INK2 } });
+      rect(s, { x: barX, y: y + 0.06, w: barW * (score / 5), h: 0.28,
+        fill: { color: score >= 4.5 ? BRAND : BRAND_L } });
+      s.addText(score.toFixed(1), { x: barX + barW + 0.25, y: y - 0.08, w: 0.9, h: 0.5,
+        valign: 'middle', margin: 0, fontFace: KR, fontSize: 24, bold: true, color: WHITE });
+      y += 0.56;
     }
-    footline(s, p.comment.replace(/^"|"$/g, ''), 5.06);
   },
 
   /* 총평 — 좌(오렌지) / 우(잉크) 색면 대비 */
