@@ -13,6 +13,7 @@ candidate + 수집 에셋 → ① 뽀개기 덱(pptx) → ② 슬라이드 PNG �
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -214,6 +215,10 @@ def build_spec_and_script(c: Candidate, assets: dict, ratings: dict) -> tuple[di
 # 덱 → 슬라이드 PNG
 # ---------------------------------------------------------------------------
 
+# 렌더 엔진 — overlay(PIL 직접 렌더, 기본) / deck(pptx→Keynote, macOS 전용)
+DECK_ENGINE = os.environ.get("RE_DECK_ENGINE", "overlay")
+
+
 def build_deck(spec: dict, out_pptx: pathlib.Path) -> pathlib.Path:
     out_pptx = out_pptx.resolve()
     spec_path = out_pptx.with_suffix(".spec.json")
@@ -270,9 +275,18 @@ def make_episode(c: Candidate, out_root: pathlib.Path = pathlib.Path("data/asset
     ratings = build_ratings(c)
     spec, lines, facts = build_spec_and_script(c, assets, ratings)
 
-    deck = build_deck(spec, ep_dir / f"{slug}.pptx")
     images_dir = ep_dir / "slides"
-    pages = deck_to_slides(deck, images_dir)
+    if DECK_ENGINE == "overlay":
+        # 오버레이 엔진: PIL로 바로 PNG를 그린다 (Keynote 불필요, 표현 제약 없음)
+        from tracks.realestate.overlay import render_spec
+
+        deck = ep_dir / f"{slug}.spec.json"
+        for old in images_dir.glob("*.png"):
+            old.unlink()
+        pages = render_spec(spec, images_dir)
+    else:
+        deck = build_deck(spec, ep_dir / f"{slug}.pptx")
+        pages = deck_to_slides(deck, images_dir)
     if len(pages) != len(lines):
         raise CaptureError(f"슬라이드 {len(pages)}장 ≠ 대본 {len(lines)}행 — spec 불일치")
 

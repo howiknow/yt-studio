@@ -20,10 +20,45 @@ const W = 13.33, H = 7.5;
 const SAFE_Y = 5.78;   // 이 아래는 자막 영역 — 핵심 요소 배치 금지
 const M = 0.86;        // 좌우 기본 여백
 
-// 채널 팔레트 (Seed carrot 계열 + 딥 잉크)
-const INK = '14161A', INK2 = '1E222A', BRAND = 'FF6600', BRAND_L = 'FF9364',
-      WHITE = 'FFFFFF', DIM = 'A8ADB6', LINE = '2E333C';
-const KR = 'Apple SD Gothic Neo';
+// ── 테마 ────────────────────────────────────────────────────────────────────
+// DECK_THEME 환경변수로 선택 (기본 broadcast). 색·폰트·이미지 처리 방식이 바뀐다.
+const THEMES = {
+  // ① 방송 그래픽 — 딥 잉크 + 캐럿 오렌지, 이미지 풀블리드
+  broadcast: {
+    bg: '14161A', panel: '1E222A', accent: 'FF6600', accent2: 'FF9364',
+    fg: 'FFFFFF', dim: 'A8ADB6', line: '2E333C',
+    font: 'Apple SD Gothic Neo', headFont: 'Apple SD Gothic Neo',
+    light: false, bleed: true, chipRadius: 0.25, headSize: 46, numSize: 62,
+  },
+  // ② 매거진 에디토리얼 — 아이보리 지면 + 명조 헤드, 이미지는 여백 두고 앉힘
+  magazine: {
+    bg: 'F5F1EA', panel: 'EAE3D8', accent: '1F4B3F', accent2: '4E7A6B',
+    fg: '1A1A18', dim: '6E675C', line: 'D9D0C2',
+    font: 'Apple SD Gothic Neo', headFont: 'AppleMyungjo',
+    light: true, bleed: false, chipRadius: 0.05, headSize: 44, numSize: 58,
+  },
+  // ③ 뉴스 브리핑 — 화이트 + 딥블루, 상단 컬러바, 데이터 강조
+  news: {
+    bg: 'FFFFFF', panel: 'F1F4F9', accent: '0B3D91', accent2: 'D62828',
+    fg: '10141C', dim: '5A6172', line: 'D9DEE8',
+    font: 'Apple SD Gothic Neo', headFont: 'Apple SD Gothic Neo',
+    light: true, bleed: true, chipRadius: 0.05, headSize: 48, numSize: 66,
+    topBar: true,
+  },
+  // ④ 네온 나이트 — 딥 네이비 + 시안/라임, 초대형 숫자
+  neon: {
+    bg: '0A0F1F', panel: '141B33', accent: '00E5A0', accent2: '35C2FF',
+    fg: 'F2F6FF', dim: '8A94B0', line: '25304F',
+    font: 'Apple SD Gothic Neo', headFont: 'Apple SD Gothic Neo',
+    light: false, bleed: true, chipRadius: 0.25, headSize: 46, numSize: 70,
+  },
+};
+const T = THEMES[process.env.DECK_THEME] || THEMES.broadcast;
+
+const INK = T.bg, INK2 = T.panel, BRAND = T.accent, BRAND_L = T.accent2,
+      WHITE = T.fg, DIM = T.dim, LINE = T.line;
+const KR = T.font, KRH = T.headFont;
+const ON_IMG = T.light ? 'FFFFFF' : T.fg;   // 이미지 위 글자는 항상 흰색
 
 // ── 공통 파츠 ───────────────────────────────────────────────────────────────
 const rect = (s, o) => s.addShape('rect', { line: { type: 'none' }, ...o });
@@ -45,7 +80,7 @@ function kicker(s, text, color = BRAND) {
   const w = Math.max(1.5, text.length * 0.19 + 0.6);
   s.addShape('roundRect', { x: M, y: 0.62, w, h: 0.5, rectRadius: 0.25, fill: { color }, line: { type: 'none' } });
   s.addText(text, { x: M, y: 0.62, w, h: 0.5, align: 'center', valign: 'middle', margin: 0,
-    fontFace: KR, fontSize: 15, bold: true, color: WHITE, charSpacing: -0.3 });
+    fontFace: KR, fontSize: 15, bold: true, color: 'FFFFFF', charSpacing: -0.3 });
 }
 /** 잉크 배경 + 상단 킥커 + 큰 헤드라인 (텍스트 슬라이드 공통 헤더) */
 function head(s, kick, headline) {
@@ -53,7 +88,8 @@ function head(s, kick, headline) {
   s.addText(kick, { x: M, y: 0.72, w: 10, h: 0.42, margin: 0,
     fontFace: KR, fontSize: 16, bold: true, color: BRAND, charSpacing: 0.6 });
   s.addText(headline, { x: M, y: 1.22, w: W - M * 2, h: 1.0, margin: 0,
-    fontFace: KR, fontSize: 46, bold: true, color: WHITE, charSpacing: -1.2 });
+    fontFace: KRH, fontSize: T.headSize, bold: true, color: WHITE, charSpacing: -1.2 });
+  if (T.topBar) rect(s, { x: 0, y: 0, w: W, h: 0.12, fill: { color: BRAND } });
 }
 /** 안전영역 바로 위에 놓는 한 줄 강조 (오렌지 좌측 바 + 텍스트) */
 function footline(s, text, y = 4.98) {
@@ -68,13 +104,28 @@ const R = {
   cover(p) {
     const s = pres.addSlide();
     s.background = { color: INK };
-    if (p.image) s.addImage({ path: p.image, x: 0, y: 0, w: W, h: H, sizing: { type: 'cover', w: W, h: H } });
-    scrim(s);
-    kicker(s, '예린이의 부동산 뽀개기');
-    s.addText(p.name, { x: M, y: 3.42, w: W - M * 2, h: 1.5, margin: 0,
-      fontFace: KR, fontSize: 62, bold: true, color: WHITE, charSpacing: -2 });
-    s.addText(p.subtitle, { x: M, y: 4.98, w: W - M * 2, h: 0.6, margin: 0,
-      fontFace: KR, fontSize: 21, color: 'D5D8DD', charSpacing: -0.4 });
+    if (T.bleed) {
+      if (p.image) s.addImage({ path: p.image, x: 0, y: 0, w: W, h: H, sizing: { type: 'cover', w: W, h: H } });
+      scrim(s);
+      if (T.topBar) rect(s, { x: 0, y: 0, w: W, h: 0.12, fill: { color: BRAND } });
+      kicker(s, '예린이의 부동산 뽀개기');
+      s.addText(p.name, { x: M, y: 3.42, w: W - M * 2, h: 1.5, margin: 0,
+        fontFace: KRH, fontSize: 62, bold: true, color: 'FFFFFF', charSpacing: -2 });
+      s.addText(p.subtitle, { x: M, y: 4.98, w: W - M * 2, h: 0.6, margin: 0,
+        fontFace: KR, fontSize: 21, color: 'D5D8DD', charSpacing: -0.4 });
+    } else {
+      // 매거진: 지면 위에 사진을 얹고 타이포는 여백에
+      if (p.image) s.addImage({ path: p.image, x: 6.0, y: 0.9, w: W - 6.0 - M, h: 5.5,
+        sizing: { type: 'cover', w: W - 6.0 - M, h: 5.5 } });
+      s.addText('예린이의 부동산 뽀개기', { x: M, y: 0.95, w: 4.6, h: 0.4, margin: 0,
+        fontFace: KR, fontSize: 15, bold: true, color: BRAND, charSpacing: 1.2 });
+      rect(s, { x: M, y: 1.5, w: 1.4, h: 0.05, fill: { color: BRAND } });
+      s.addText(p.name, { x: M, y: 2.0, w: 4.9, h: 2.4, margin: 0,
+        fontFace: KRH, fontSize: 50, bold: true, color: WHITE, charSpacing: -1.6,
+        lineSpacingMultiple: 1.08 });
+      s.addText(p.subtitle.replace(/  ·  /g, '\n'), { x: M, y: 4.5, w: 4.7, h: 1.2, margin: 0,
+        fontFace: KR, fontSize: 16, color: DIM, charSpacing: -0.3, lineSpacingMultiple: 1.3 });
+    }
   },
 
   /* 결론 — 거대 숫자 3분할 + 한 줄 평 */
@@ -87,7 +138,7 @@ const R = {
       const x = M + i * colW;
       const big = String(c.big).replace(/^월\s*/, '');
       s.addText(big, { x: x + 0.06, y: 2.55, w: colW - 0.3, h: 1.3, margin: 0,
-        fontFace: KR, fontSize: fitSize(big, 62), bold: true,
+        fontFace: KR, fontSize: fitSize(big, T.numSize), bold: true,
         color: i === 0 ? BRAND : WHITE, charSpacing: -2 });
       const label = (c.small || '').split('\n')[0];
       s.addText(label, { x: x + 0.08, y: 3.9, w: colW - 0.35, h: 0.5, margin: 0,
@@ -121,11 +172,21 @@ const R = {
   photo(p) {
     const s = pres.addSlide();
     s.background = { color: INK };
+    if (!T.bleed) {
+      s.addImage({ path: p.image, x: M, y: 1.55, w: W - M * 2, h: 3.9,
+        sizing: { type: 'cover', w: W - M * 2, h: 3.9 } });
+      s.addText(p.chip.replace(/\s+/g, ' '), { x: M, y: 0.8, w: 6, h: 0.4, margin: 0,
+        fontFace: KR, fontSize: 15, bold: true, color: BRAND, charSpacing: 1.1 });
+      s.addText(p.head, { x: M, y: 5.62, w: W - M * 2, h: 0.7, margin: 0,
+        fontFace: KRH, fontSize: fitSize(p.head, 34, 0.5, 24), bold: true, color: WHITE, charSpacing: -0.8 });
+      return;
+    }
     s.addImage({ path: p.image, x: 0, y: 0, w: W, h: H, sizing: { type: 'cover', w: W, h: H } });
     scrim(s);
+    if (T.topBar) rect(s, { x: 0, y: 0, w: W, h: 0.12, fill: { color: BRAND } });
     kicker(s, p.chip.replace(/\s+/g, ' '));
     s.addText(p.head, { x: M, y: 4.12, w: W - M * 2, h: 0.95, margin: 0,
-      fontFace: KR, fontSize: fitSize(p.head, 42, 0.55, 28), bold: true, color: WHITE, charSpacing: -1.2 });
+      fontFace: KRH, fontSize: fitSize(p.head, 42, 0.55, 28), bold: true, color: 'FFFFFF', charSpacing: -1.2 });
     s.addText(p.body.split('(')[0].trim(), { x: M, y: 5.08, w: W - M * 2, h: 0.6, margin: 0,
       fontFace: KR, fontSize: 19, color: 'D5D8DD', charSpacing: -0.4 });
   },
